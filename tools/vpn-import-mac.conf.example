@@ -1,0 +1,14 @@
+# Пример конфига для vpn-import-mac.sh
+# Скопируйте в ~/.config/vpn-import-mac.conf и заполните своими значениями.
+
+# SSH-цель роутера для автоскачивания p12 (scp)
+VPN_IMPORT_SSH="admin@203.0.113.10"
+
+# Путь к приватному SSH-ключу (если вход по ключу); пусто = агент/дефолт
+VPN_IMPORT_KEY="$HOME/.ssh/id_ed25519"
+
+# Домен сервера — суффикс имени сертификата (<peer>@<domain>)
+VPN_IMPORT_DOMAIN="vpn.example.com"
+
+# Рабочая папка для временных файлов (по умолчанию ~/.cache/vpn-import)
+# VPN_IMPORT_WORKDIR="$HOME/.cache/vpn-import"

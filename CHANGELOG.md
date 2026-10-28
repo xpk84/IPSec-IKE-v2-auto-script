@@ -62,3 +62,10 @@
 - README: задокументирован дефект импорта macOS — RouterOS 7.24+ пакует ключ p12
   как PBES2/AES-256, Keychain молча теряет ключ (серт без ключа); рецепт пересборки
   в legacy-3DES добавлен в README.fork.md.
+
+## v2.3.3 — 2026-10-28
+
+- Финальное сообщение Create-peer печатает подсказку для macOS (vpn-import-mac).
+- В репо добавлен tools/vpn-import-mac.sh — helper импорта p12 в macOS System keychain
+  (автоскачивание с роутера по scp, пересборка legacy-3DES, чистка дублей, импорт, проверка);
+  пример конфига — tools/vpn-import-mac.conf.example.
