@@ -75,6 +75,10 @@ sudo security import peer.legacy.p12 -k /Library/Keychains/System.keychain -A
 security find-identity -v /Library/Keychains/System.keychain  # должна появиться identity
 ```
 
+Готовый helper — `tools/vpn-import-mac.sh`: скачивает p12 с роутера по scp,
+пересобирает, чистит дубли, импортирует identity и проверяет её — одной командой.
+Пример конфига — `tools/vpn-import-mac.conf.example`.
+
 (`-A` — разрешить VPN-демону доступ к ключу без GUI-промптов; если `-legacy` нет в вашей
 сборке openssl — замените на `-certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1`.
 CA сертификат ставится в System keychain отдельно, как обычно.)
