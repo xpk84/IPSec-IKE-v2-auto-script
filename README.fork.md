@@ -52,7 +52,32 @@
 
 ## Совместимость
 
-- Требуется RouterOS **7.13+** (используется `:rnd`). Проверено на 7.24.5.
+- RouterOS 7.x. Проверено на 7.24.5.
+- ⚠️ `:rnd` в RouterOS **не существует** (вопреки старым упоминаниям) — случайный срок
+  генерируется из системных часов, см. v2.3.2.
+
+## Импорт p12 на macOS (RouterOS 7.24+)
+
+RouterOS (после обновления ~7.16–7.24) упаковывает приватный ключ в PKCS#12
+по-новому: `PBES2 + PBKDF2 + AES-256-CBC`. macOS Keychain Access / `security import`
+проверяют MAC по паролю (пароль «принимается»), но **молча выбрасывают PBES2-ключ** —
+импортируется сертификат без ключа: identity не создаётся, Machine Certificate не выбирается.
+Старые экспорты (до обновления, `pbeWithSHA1And3DES`) импортируются нормально.
+
+Лечение — пересобрать p12 в legacy-шифрование и импортировать его:
+
+```bash
+openssl pkcs12 -in peer.p12 -out bundle.pem -nodes          # спросит пароль p12
+openssl pkcs12 -export -legacy -in bundle.pem -inkey bundle.pem \
+  -name "peer@host" -out peer.legacy.p12                    # спросит/возьмёт пароль
+rm bundle.pem
+sudo security import peer.legacy.p12 -k /Library/Keychains/System.keychain -A
+security find-identity -v /Library/Keychains/System.keychain  # должна появиться identity
+```
+
+(`-A` — разрешить VPN-демону доступ к ключу без GUI-промптов; если `-legacy` нет в вашей
+сборке openssl — замените на `-certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1`.
+CA сертификат ставится в System keychain отдельно, как обычно.)
 
 ## Согласование порядков в rollback
 
