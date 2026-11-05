@@ -52,6 +52,21 @@
 объекта — «Nothing to remove» и чистый выход. Хранилище сертификатов не обрастает
 отозванными записями.
 
+## Пересборка p12 для iOS/Android (tools/vpn-friendly-p12.sh)
+
+RouterOS кладёт в p12 клиентский серт **вместе с CA** (два серта в контейнере) и не пишет
+имя ключевому багу. iOS отвергает такой контейнер («Сертификат удостоверения» должен содержать
+только один сертификат и его уникальный ключ), Android показывает hex-имя вместо читаемого.
+Хелпер забирает p12 с роутера, скрыто спрашивает пароль выпуска и новый пароль, пересобирает
+контейнер: ровно один серт + ключ, `friendlyName` = имя пира, PBES2 (iOS/Android читают; для
+macOS Keychain используйте tools/vpn-import-mac.sh с legacy-пересборкой).
+
+    ~/.local/bin/vpn-friendly-p12 <peer>          # scp с роутера + пересборка
+    vpn-friendly-p12 --file <p12> [peer]          # локальный файл
+
+Приватный конфиг `~/.config/vpn-friendly-p12.conf` (0600), пример — `tools/vpn-friendly-p12.conf.example`.
+CA на iOS ставится отдельным профилем (`cert_export_CA.<домен>.crt` из Files роутера).
+
 ## Запуск
 
 Только из живой консоли (WinBox New Terminal или ssh): `/system script run IKEv2_run_to_create`.
