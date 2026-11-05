@@ -1,6 +1,0 @@
-# vpn-friendly-p12 configuration (copy to ~/.config/vpn-friendly-p12.conf, chmod 600)
-# Values are PRIVATE — this example uses masked placeholders (RFC 5737 / example domain).
-VFP_ROUTER=203.0.113.10
-VFP_SSHUSER=svcuser
-VFP_SSHKEY=/Users/you/work/tools/yourdir/your_ed25519_key
-VFP_DOMAIN=vpn.example.com
