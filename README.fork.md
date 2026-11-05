@@ -63,6 +63,25 @@ RouterOS кладёт в p12 клиентский серт **вместе с CA*
 
     vpn-cert-for-ios.sh <file>.p12        # выход: <file>.ios.p12 рядом с исходником
 
+> Как это теми же командами вручную (файл скачан из Files роутера, например `ike2_user_mobile_20261105@vpn.example.com.p12`):
+
+    # macOS / Linux — терминал, openssl уже есть:
+    openssl pkcs12 -in "<file>.p12" -clcerts -nokeys -passin pass:<СТАРЫЙ> -out leaf.pem
+    openssl pkcs12 -in "<file>.p12" -nocerts -nodes -passin pass:<СТАРЫЙ> -out key.pem
+    openssl pkcs12 -export -in leaf.pem -inkey key.pem -name <peer> -passout pass:<НОВЫЙ> -out <peer>.ios.p12
+
+    # Windows (PowerShell) — сначала один раз:
+    #   winget install FireFruitDevelopment.Openssl   (или "ShiningLight.OpenSSL.Light")
+    # затем те же три команды openssl (в PowerShell работают как есть).
+    # Пароли в командной строке (-passin pass:...) видны в истории оболочки —
+    # безопаснее вводить их по запросу: уберите -passin/-passout, openssl спросит сам.
+
+    # Проверка результата: ровно один сертификат и имя читаемое:
+    openssl pkcs12 -info -in <peer>.ios.p12 -nokeys
+
+Хелпер `vpn-cert-for-ios.sh` делает то же самое (плюс скрытый ввод паролей, самопроверку, `rm -P`
+временных файлов); на маке он установлен в `~/.local/bin` (PATH уже прописан в `~/.bashrc`).
+
 CA на iOS ставится отдельным профилем (`cert_export_CA.<домен>.crt` из Files роутера).
 Для macOS Keychain используйте tools/vpn-import-mac.sh (legacy-пересборка).
 
