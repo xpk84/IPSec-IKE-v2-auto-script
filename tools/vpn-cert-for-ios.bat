@@ -65,7 +65,16 @@ find /c "BEGIN CERTIFICATE" < "%TMPD%\leaf.pem" | find "1" >nul || (
 )
 
 set "OUT=%~dp1!NAME!.ios.p12"
-"%SSL%" pkcs12 -export -in "%TMPD%\leaf.pem" -inkey "%TMPD%\key.pem" -name "!NAME!" -out "%OUT%" || goto :fail
+rem Apple (iOS/macOS) only unwraps 3DES/legacy-KDF p12 keys; PBES2 half-imports.
+rem OpenSSL 3+: needs -legacy (and legacy provider). OpenSSL 1.1.x: no -legacy
+rem flag, but 3DES PBE args work directly. Try both.
+"%SSL%" pkcs12 -export -legacy -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 -in "%TMPD%\leaf.pem" -inkey "%TMPD%\key.pem" -name "!NAME!" -out "%OUT%" 2>nul
+if not exist "%OUT%" "%SSL%" pkcs12 -export -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 -in "%TMPD%\leaf.pem" -inkey "%TMPD%\key.pem" -name "!NAME!" -out "%OUT%" || goto :fail
+if not exist "%OUT%" goto :fail
+rem warn if the key bag is not 3DES/PBES1 (OID 1.2.840.113549.1.12.1.3)
+"%SSL%" asn1parse -inform DER -in "%OUT%" | find /i "060A2A864886F70D010C0103" >nul || (
+    echo WARNING: output is not 3DES/PBES1 - Apple may reject the key.
+)
 
 del /q "%TMPD%\key.pem" "%TMPD%\leaf.pem" >nul 2>&1
 rmdir "%TMPD%" >nul 2>&1

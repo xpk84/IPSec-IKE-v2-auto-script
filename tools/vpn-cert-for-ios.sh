@@ -2,7 +2,8 @@
 # vpn-cert-for-ios.sh — repack a RouterOS-exported PKCS#12 for iOS import.
 # RouterOS puts leaf + CA (two certs) into one p12; iOS rejects that for an identity
 # profile («...только один сертификат и его уникальный ключ»), Android shows a hex name.
-# Output: exactly ONE cert + its key, friendlyName = file name (readable), PBES2.
+# Output: exactly ONE cert + its key, friendlyName = file name (readable),
+# 3DES/PBES1 (Apple): iOS/macOS keychain only unwraps legacy-KDF PKCS#12.
 #
 # Usage: vpn-cert-for-ios.sh <file.p12>
 # Asks (hidden): passphrase of the source p12, then a new passphrase (>= 8 chars) twice.
@@ -36,8 +37,20 @@ openssl pkcs12 -in "$SRC" -clcerts -nokeys -passin env:SRC_PASS -out "$TMP/leaf.
 [[ "$(grep -c -- 'BEGIN CERTIFICATE' "$TMP/leaf.pem")" -eq 1 ]] || die "expected exactly 1 leaf cert"
 
 OUT="$(dirname "$SRC")/${PEER}.ios.p12"
-openssl pkcs12 -export -in "$TMP/leaf.pem" -inkey "$TMP/key.pem" -name "$PEER" \
-    -passout env:OUT_PASS -out "$OUT" || die "rebuild failed"
+# Apple (iOS/macOS) cannot unwrap PBES2/AES p12 keys -> the identity imports
+# half-broken (cert ok, key dead: picker offers it once, then drops it).
+# Re-export with 3DES + legacy KDF everywhere (classic Apple layout);
+# fall back to LibreSSL (same defaults) if -legacy is unavailable.
+P12ARGS=(-export -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1
+         -in "$TMP/leaf.pem" -inkey "$TMP/key.pem" -name "$PEER" -passout env:OUT_PASS -out "$OUT")
+if ! openssl pkcs12 "${P12ARGS[@]}" -legacy 2>/dev/null; then
+    /usr/bin/openssl pkcs12 "${P12ARGS[@]}" \
+        || die "rebuild failed (openssl -legacy and LibreSSL both unavailable)"
+fi
+# verify: pbeWithSHAAnd3-KeyTripleDES-CBC (OID 1.2.840.113549.1.12.1.3) must
+# protect the bags; in an asn1parse hex dump it shows as 060A2A864886F70D010C0103
+openssl asn1parse -inform DER -in "$OUT" | grep -qi '060A2A864886F70D010C0103' \
+    || die "output p12 is not 3DES/PBES1 - Apple would reject the key"
 openssl pkcs12 -info -in "$OUT" -passin env:OUT_PASS -nokeys 2>/dev/null | grep -qi "friendlyName: ${PEER}$" \
     || die "verification failed"
 unset SRC_PASS OUT_PASS OUT_PASS2

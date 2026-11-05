@@ -115,3 +115,14 @@
 - В подсказке — готовые команды пересборки через openssl (leaf+ключ, читаемое имя),
   одинаковые для macOS/Linux/Windows (для Windows — сначала `winget install ... openssl`),
   и указание на хелпер tools/vpn-cert-for-ios.sh в репозитории форка.
+## 2026-11-05 (helper fix) — Apple legacy p12
+- vpn-cert-for-ios.sh: re-export with 3DES/PBES1 (`-legacy` + explicit
+  `-certpbe/-keypbe PBE-SHA1-3DES -macalg sha1`, LibreSSL fallback). Apple
+  (iOS/macOS) silently drops PBES2 keys: identity imports half-broken — the
+  certificate picker offers it once, then removes it. Verified by synthetic
+  end-to-end test: 1 cert + 1 key, both bags 3DES, readable friendlyName,
+  clean error on wrong passphrase.
+- vpn-cert-for-ios.bat: same 3DES re-export with -legacy / no-legacy retry
+  and a 3DES presence check (warning if missing).
+- README: manual macOS/Linux openssl commands now include -legacy; added the
+  Apple PBES2 half-import explanation.

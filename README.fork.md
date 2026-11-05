@@ -68,7 +68,15 @@ RouterOS кладёт в p12 клиентский серт **вместе с CA*
     # macOS / Linux — терминал, openssl уже есть:
     openssl pkcs12 -in "<file>.p12" -clcerts -nokeys -passin pass:<СТАРЫЙ> -out leaf.pem
     openssl pkcs12 -in "<file>.p12" -nocerts -nodes -passin pass:<СТАРЫЙ> -out key.pem
-    openssl pkcs12 -export -in leaf.pem -inkey key.pem -name <peer> -passout pass:<НОВЫЙ> -out <peer>.ios.p12
+    openssl pkcs12 -export -legacy -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 \
+        -in leaf.pem -inkey key.pem -name <peer> -passout pass:<НОВЫЙ> -out <peer>.ios.p12
+
+**Важно (Apple)**: iOS/macOS разворачивают только p12 с 3DES и legacy-KDF (PBES1).
+P12 с PBES2 (дефолт OpenSSL 3+) на iOS **наполовину импортируется**: сертификат
+ставится, ключ — нет; identity появляется в выборе один раз, при первой же
+попытке подключения iOS помечает её негодной и убирает из списка («не даёт
+выбрать»). Поэтому в экспорте выше обязателен `-legacy` (или явные
+`-certpbe/-keypbe PBE-SHA1-3DES -macalg sha1`).
 
 **Windows — проще батником**: скачайте `tools/vpn-cert-for-ios.bat` и перетащите на него p12
 в Проводнике. Батник сам найдёт `openssl.exe` (PATH → Git for Windows → OpenSSL-Win64);
