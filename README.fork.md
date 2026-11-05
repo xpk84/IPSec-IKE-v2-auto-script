@@ -70,6 +70,14 @@ RouterOS кладёт в p12 клиентский серт **вместе с CA*
     openssl pkcs12 -in "<file>.p12" -nocerts -nodes -passin pass:<СТАРЫЙ> -out key.pem
     openssl pkcs12 -export -in leaf.pem -inkey key.pem -name <peer> -passout pass:<НОВЫЙ> -out <peer>.ios.p12
 
+**Windows — проще батником**: скачайте `tools/vpn-cert-for-ios.bat` и перетащите на него p12
+в Проводнике. Батник сам найдёт `openssl.exe` (PATH → Git for Windows → OpenSSL-Win64);
+если нигде нет — напечатает команду установки (`winget install FireFruitDevelopment.Openssl`)
+и завершится. Пароли спрашивает сам openssl (скрытый ввод): старый, затем новый дважды.
+Итог — `<peer>.ios.p12` рядом с исходником.
+
+Ручной вариант (PowerShell, если батника нет под рукой):
+
     # Windows (PowerShell) — сначала один раз:
     #   winget install FireFruitDevelopment.Openssl   (или "ShiningLight.OpenSSL.Light")
     # затем те же три команды openssl (в PowerShell работают как есть).
