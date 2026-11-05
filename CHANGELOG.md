@@ -126,3 +126,16 @@
   and a 3DES presence check (warning if missing).
 - README: manual macOS/Linux openssl commands now include -legacy; added the
   Apple PBES2 half-import explanation.
+
+## 2026-11-05 (plan B) — vpn-ios-profile.sh (.mobileconfig generator)
+- New helper: builds a single iOS configuration profile embedding CA root,
+  client identity (leaf-only, 3DES/PBES1, password prompted at install —
+  never embedded) and a ready IKEv2 VPN payload
+  (AuthenticationMethod=Certificate, PayloadCertificateUUID linkage,
+  LocalIdentifier=CN, ServerCertificateIssuerCommonName=CA CN,
+  exactly-one proposal AES-256/SHA2-256/modp2048 IKE and AES-256/SHA2-256
+  child without PFS — matches the profile/proposal the script installs).
+  Bypasses the unreliable manual certificate picker entirely.
+- Verified on synthetic RouterOS-style input: plist lints, 3 payloads,
+  UUID linkage correct, embedded p12 = 1 cert + key, 3DES x2, same-pass
+  unwrap, no Password key in the profile.
