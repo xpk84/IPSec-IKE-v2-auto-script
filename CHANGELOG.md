@@ -139,3 +139,17 @@
 - Verified on synthetic RouterOS-style input: plist lints, 3 payloads,
   UUID linkage correct, embedded p12 = 1 cert + key, 3DES x2, same-pass
   unwrap, no Password key in the profile.
+
+## 2026-11-05 (Android) — vpn-android-profile.sh (.sswan generator)
+- New helper for the strongSwan Android client: builds a self-contained
+  .sswan profile (uuid/type=ikev2-cert, remote.addr+id+CA pin via
+  remote.cert, local.id + PKCS#12 embedded via local.p12 — imported into
+  the app keystore, not the system one; exactly one proposal:
+  aes256-sha256-modp2048 IKE, aes256-sha256 ESP without DH for pfs=none).
+  The Android analog of the iOS .mobileconfig; the built-in Android client
+  has NO profile import at all (certs only), so strongSwan is the only
+  file-provisionable path. Identity is re-exported leaf-only 3DES/PBES1
+  with a readable name (fixes the hex localKeyID alias too); passphrase
+  is asked by the app at import, never embedded.
+- Verified on synthetic RouterOS-style input: JSON valid, p12 = 1 cert +
+  key (3DES x2, same-pass unwrap), CA DER decodes, clean wrong-pass error.
